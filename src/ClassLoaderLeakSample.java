@@ -8,18 +8,15 @@ import java.nio.file.Paths;
  *
  * <p>To see it in action, copy this file to a temp directory somewhere,
  * and then run:
- * <pre>{@code
- *   javac Retransformer.java
- *   java -cp . Retransformer
- * }</pre>
+ * <pre>
+ *   javac ClassLoaderLeakSample.java
+ *   java -cp . ClassLoaderLeakSample
+ * </pre>
  *
- * <p>And watch the memory grow! On my system, using JDK 1.8.0_25, I start
- * getting OutofMemoryErrors within just a few seconds.
- *
- * <p>This class is implemented using some Java 8 features, mainly for
- * convenience in doing I/O. The same basic mechanism works in any version of Java since 1.2.
+ * <p>And watch the memory grow! On my system, using JDK 11, I start
+ * getting OutOfMemoryErrors within just a few seconds.
  */
-public final class Retransformer {
+public final class ClassLoaderLeakSample {
 
     static volatile boolean running = true;
 
@@ -81,7 +78,7 @@ public final class Retransformer {
     static final class ChildOnlyClassLoader extends ClassLoader {
 
         ChildOnlyClassLoader() {
-            super(Retransformer.class.getClassLoader());
+            super(ClassLoaderLeakSample.class.getClassLoader());
         }
 
         @Override
@@ -91,7 +88,7 @@ public final class Retransformer {
             }
 
             try {
-                Path path = Paths.get("out/production/MemoryLeak/Retransformer$Child.class");
+                Path path = Paths.get("out/production/MemoryLeak/ClassLoaderLeakSample$Child.class");
                 byte[] classBytes = Files.readAllBytes(path);
                 Class<?> c = defineClass(name, classBytes, 0, classBytes.length);
                 if (resolve) {
@@ -113,7 +110,7 @@ public final class Retransformer {
         // makes the effect visible more quickly.
         // Note that we're really leaking these bytes, since we're effectively
         // creating a new instance of this static final field on each iteration!
-        static final byte[] moreBytesToLeak = new byte[1024 * 1024 * 10];
+        static final byte[] moreBytesToLeak = new byte[1024 * 1024 * 100];
 
         private static final ThreadLocal<Child> threadLocal = new ThreadLocal<>();
 
